@@ -36,8 +36,15 @@ async def toggle_todo_action(request: Request, id: int, db:SessionDep, user:Auth
 
 @todo_router.post('/editTodo/{id}')
 def edit_todo_action(request: Request, id: int, text: Annotated[str, Form()], db:SessionDep, user:AuthDep):
-    # Implement task 5.2 here. Remove the line below that says "pass" once complete
-    pass
+    todo = db.exec(select(Todo).where(Todo.id == id, Todo.user_id == user.id)).one_or_none()
+    if not todo:
+        flash(request, 'Invalid id or unauthorized')
+    else:
+        todo.text = text
+        db.add(todo)
+        db.commit()
+        flash(request, f'Todo updated!')
+    return RedirectResponse(url=request.url_for('app_dashbaord'), status_code=status.HTTP_303_SEE_OTHER)
 
 @todo_router.get('/deleteTodo/{id}')
 def delete_todo_action(request: Request, id: int, db:SessionDep, user:AuthDep):
