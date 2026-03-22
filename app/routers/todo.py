@@ -46,6 +46,12 @@ def edit_todo_action(request: Request, id: int, text: Annotated[str, Form()], db
         flash(request, f'Todo updated!')
     return RedirectResponse(url=request.url_for('app_dashbaord'), status_code=status.HTTP_303_SEE_OTHER)
 
+@todo_router.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    flash(request, "Logged out successfully")
+    return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
 @todo_router.get('/deleteTodo/{id}')
 def delete_todo_action(request: Request, id: int, db:SessionDep, user:AuthDep):
     todo = db.exec(select(Todo).where(Todo.id == id, Todo.user_id == user.id)).one_or_none()
