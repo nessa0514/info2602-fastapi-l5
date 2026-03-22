@@ -18,13 +18,21 @@ async def login_action(
     db: SessionDep,
     request: Request
 ) -> Response:
-    # Implement task 3.3 here. Remove the line below that says "pass" once complete
-    pass
+    user = db.exec(select(User).where(User.username == form_data.username)).one_or_none()
+    if not user or not verify_password(plaintext_password=form_data.password, encrypted_password=user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(data={"sub": f"{user.id}", "role": user.role},)
 
-@auth_router.post('/signup', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def signup_user(request:Request, db:SessionDep, username: Annotated[str, Form()], email: Annotated[str, Form()], password: Annotated[str, Form()],):
-    # Implement task 3.4 here. Remove the line below that says "pass" once complete
-    pass
+    max_age = 1 * 24 * 60 * 60 # (1 day converted to secs)
+    response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True, max_age=max_age, samesite="lax")
+    flash(request, "Logged in successfully")
+
+    return response
 
 @auth_router.get("/identify", response_model=UserResponse)
 def get_user_by_id(db: SessionDep, user:AuthDep):
